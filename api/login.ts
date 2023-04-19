@@ -2,12 +2,20 @@ import { Request, Response } from "express";
 import { prisma } from "../db";
 import { checkPassword, createToken } from "../utility";
 
+interface Data {
+  email: string;
+  password: string;
+};
+
 export const Login = async (req: Request, res: Response) => {
-  const email: string = req.body.email;
-  const password: string = req.body.password;
+  // const email: string = req.body.email;
+  // const password: string = req.body.password;
+
+  const data: Data = req.body;
+
   const getHashPassword = await prisma.user.findFirst({
     where: {
-      email: email 
+      email: data.email 
     },
     select: { 
       id: true,
@@ -17,7 +25,7 @@ export const Login = async (req: Request, res: Response) => {
   const hashPassword: string | undefined = getHashPassword?.password;
 
   try {
-    await checkPassword(hashPassword, password); 
+    await checkPassword(hashPassword, data.password); 
   } catch (e: any) {
     res.status(404);
     return res.json({
@@ -26,9 +34,9 @@ export const Login = async (req: Request, res: Response) => {
     });
   };
   
-  const obj = createToken(email); 
+  const obj = createToken(data.email); 
   await prisma.user.updateMany({
-    where: { email:  email },
+    where: { email:  data.email },
     data: {
       signingKey: Buffer.from(obj.signingKey),
       token: obj.token

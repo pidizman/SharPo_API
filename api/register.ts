@@ -1,14 +1,20 @@
-import { hash } from "argon2";
 import { Request, Response } from "express";
 import { prisma } from "../db";
 import { createToken } from "../utility";
 
+interface Data {
+  email: string;
+  password: string;
+};
+
 export const Register = async (req: Request, res: Response) => {
-  const email: string = req.body.email;
-  const password: string = await hash(req.body.password);
+  // const email: string = req.body.email;
+  // const password: string = await hash(req.body.password);
+
+  const data: Data = req.body;
   
   const checkEmail = await prisma.user.findFirst({
-    where: { email: email },
+    where: { email: data.email },
     select: { email: true }
   });
   //console.log(checkEmail);
@@ -25,11 +31,11 @@ export const Register = async (req: Request, res: Response) => {
     });
   };
 
-  const obj = createToken(email);
+  const obj = createToken(data.email);
   await prisma.user.create({
     data: {
-      email: email,
-      password: password,
+      email: data.email,
+      password: data.password,
       signingKey: Buffer.from(obj.signingKey),
       token: obj.token
     }
@@ -37,7 +43,7 @@ export const Register = async (req: Request, res: Response) => {
 
   const id = await prisma.user.findFirst({
     where: {
-      email: email
+      email: data.email
     },
     select: {
       id: true
@@ -51,4 +57,3 @@ export const Register = async (req: Request, res: Response) => {
     id: id?.id
   });
 };
-//register
